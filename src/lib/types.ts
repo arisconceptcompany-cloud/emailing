@@ -8,7 +8,8 @@ export interface Campaign {
   subject: string
   sender: string
   senderEmail: string
-  audienceId: string
+  audienceId: string | null
+  contactIds?: string[]
   status: CampaignStatus
   date: string
   sent: number

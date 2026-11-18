@@ -24,6 +24,8 @@ import { TemplateThumb } from './TemplateThumb'
 
 const steps = ['Informations', 'Contenu', 'Audience', 'Envoi']
 
+type AudienceMode = 'all' | 'list' | 'contacts'
+
 interface CampaignForm {
   name: string
   subject: string
@@ -31,7 +33,9 @@ interface CampaignForm {
   senderEmail: string
   preview: string
   templateId: string
+  audienceMode: AudienceMode
   audienceId: string
+  contactIds: string[]
   mode: 'now' | 'later'
   scheduledFor: string
 }
@@ -46,6 +50,7 @@ export function CreateCampaignModal() {
     closeComposer,
     templates,
     lists,
+    contacts,
     addCampaign,
     sendCampaign,
     settings,
@@ -62,6 +67,7 @@ export function CreateCampaignModal() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [message, setMessage] = useState('')
   const [testEmail, setTestEmail] = useState('')
+  const [contactQuery, setContactQuery] = useState('')
   const [form, setForm] = useState<CampaignForm>({
     name: '',
     subject: '',
@@ -69,7 +75,9 @@ export function CreateCampaignModal() {
     senderEmail: defaultSenderEmail,
     preview: '',
     templateId: '',
-    audienceId: '',
+    audienceMode: lists.length ? 'list' : 'all',
+    audienceId: lists[0]?.id ?? '',
+    contactIds: [],
     mode: 'now',
     scheduledFor: toDateTimeLocal(new Date(Date.now() + 2 * 86400000)),
   })
@@ -81,6 +89,7 @@ export function CreateCampaignModal() {
     setErrors({})
     setMessage(template?.body ?? '')
     setTestEmail('')
+    setContactQuery('')
     setForm({
       name: template ? `Campagne — ${template.name}` : '',
       subject: template?.subject ?? '',
@@ -88,15 +97,55 @@ export function CreateCampaignModal() {
       senderEmail: defaultSenderEmail,
       preview: template?.preview ?? '',
       templateId: composer.templateId ?? '',
+      audienceMode: lists.length ? 'list' : 'all',
       audienceId: lists[0]?.id ?? '',
+      contactIds: [],
       mode: 'now',
       scheduledFor: toDateTimeLocal(new Date(Date.now() + 2 * 86400000)),
     })
   }, [composer.open, composer.templateId, templates, lists, defaultSenderName, defaultSenderEmail])
 
+  const activeContacts = contacts.filter((contact) => contact.status === 'active')
   const selectedList = lists.find((list) => list.id === form.audienceId)
   const selectedTemplate = templates.find((item) => item.id === form.templateId)
-  const reach = Math.round((selectedList?.count ?? 0) * 0.955)
+  const reach =
+    form.audienceMode === 'all'
+      ? activeContacts.length
+      : form.audienceMode === 'list'
+        ? Math.round((selectedList?.count ?? 0) * 0.955)
+        : form.contactIds.length
+
+  const filteredContacts = activeContacts.filter((contact) => {
+    const query = contactQuery.trim().toLowerCase()
+    if (!query) return true
+    return (
+      contact.name.toLowerCase().includes(query) || contact.email.toLowerCase().includes(query)
+    )
+  })
+  const allFilteredSelected =
+    filteredContacts.length > 0 &&
+    filteredContacts.every((contact) => form.contactIds.includes(contact.id))
+
+  const toggleContact = (id: string) => {
+    setForm((current) => ({
+      ...current,
+      contactIds: current.contactIds.includes(id)
+        ? current.contactIds.filter((item) => item !== id)
+        : [...current.contactIds, id],
+    }))
+    setErrors({})
+  }
+
+  const toggleAllFiltered = () => {
+    setForm((current) => {
+      const ids = filteredContacts.map((contact) => contact.id)
+      const contactIds = allFilteredSelected
+        ? current.contactIds.filter((id) => !ids.includes(id))
+        : Array.from(new Set([...current.contactIds, ...ids]))
+      return { ...current, contactIds }
+    })
+    setErrors({})
+  }
 
   const update = (key: keyof CampaignForm, value: CampaignForm[keyof CampaignForm]) => {
     setForm((current) => ({ ...current, [key]: value }) as CampaignForm)
@@ -122,8 +171,11 @@ export function CreateCampaignModal() {
       if (!/^\S+@\S+\.\S+$/.test(form.senderEmail))
         nextErrors.senderEmail = 'Adresse email invalide.'
     }
-    if (step === 2 && !form.audienceId) {
-      nextErrors.audience = 'Sélectionnez une liste de destinataires.'
+    if (step === 2) {
+      if (form.audienceMode === 'list' && !form.audienceId)
+        nextErrors.audience = 'Sélectionnez une liste de destinataires.'
+      if (form.audienceMode === 'contacts' && form.contactIds.length === 0)
+        nextErrors.audience = 'Sélectionnez au moins un contact.'
     }
     if (step === 3 && form.mode === 'later') {
       if (!form.scheduledFor) nextErrors.date = 'Choisissez une date et une heure.'
@@ -141,7 +193,8 @@ export function CreateCampaignModal() {
       subject: form.subject.trim(),
       sender: form.senderName.trim() || 'Aris',
       senderEmail: form.senderEmail.trim(),
-      audienceId: form.audienceId,
+      audienceId: form.audienceMode === 'list' ? form.audienceId : null,
+      contactIds: form.audienceMode === 'contacts' ? form.contactIds : [],
       templateId: form.templateId || undefined,
       preview: form.preview.trim(),
       body: message.trim(),
@@ -431,58 +484,173 @@ export function CreateCampaignModal() {
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="size-4 text-brand" />
-              <p className="text-[12.5px] font-bold text-ink">Sélectionnez une audience</p>
+              <p className="text-[12.5px] font-bold text-ink">Choisissez les destinataires</p>
             </div>
-            <span className="text-[11px] text-muted">{lists.length} listes</span>
+            <span className="text-[11px] text-muted">
+              {formatNumber(activeContacts.length)} contacts actifs
+            </span>
           </div>
 
-          <div className="space-y-2">
-            {lists.map((list) => {
-              const active = form.audienceId === list.id
+          <div className="grid gap-2 sm:grid-cols-3">
+            {(
+              [
+                {
+                  key: 'all',
+                  title: 'Tous les contacts',
+                  hint: `${formatNumber(activeContacts.length)} destinataires`,
+                },
+                {
+                  key: 'list',
+                  title: 'Une liste',
+                  hint: `${lists.length} liste${lists.length > 1 ? 's' : ''}`,
+                },
+                { key: 'contacts', title: 'Contacts précis', hint: 'Choisir un par un' },
+              ] as const
+            ).map((option) => {
+              const active = form.audienceMode === option.key
               return (
                 <button
-                  key={list.id}
+                  key={option.key}
                   type="button"
-                  onClick={() => update('audienceId', list.id)}
+                  onClick={() => update('audienceMode', option.key)}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-xl border p-3 text-left transition',
+                    'rounded-xl border p-2.5 text-left transition',
                     active
                       ? 'border-brand bg-brand-soft/40 ring-2 ring-brand/15'
                       : 'border-line bg-surface hover:border-line-strong hover:bg-surface-2/60'
                   )}
                 >
-                  <span
-                    className={cn(
-                      'size-2.5 shrink-0 rounded-full bg-linear-to-br',
-                      list.accent
-                    )}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[12.5px] font-semibold text-ink">
-                      {list.name}
-                    </span>
-                    <span className="mt-0.5 block truncate text-[11px] text-muted">
-                      {list.description}
-                    </span>
+                  <span className="block text-[11.5px] font-semibold text-ink">
+                    {option.title}
                   </span>
-                  <span className="shrink-0 text-right">
-                    <span className="block text-[12px] font-bold text-ink tabular-nums">
-                      {formatNumber(list.count)}
-                    </span>
-                    <span className="block text-[10px] text-muted">contacts</span>
-                  </span>
-                  <span
-                    className={cn(
-                      'grid size-4.5 shrink-0 place-items-center rounded-full border transition',
-                      active ? 'border-brand bg-brand text-white' : 'border-line-strong'
-                    )}
-                  >
-                    {active && <Check className="size-2.5" />}
-                  </span>
+                  <span className="mt-0.5 block text-[10px] text-muted">{option.hint}</span>
                 </button>
               )
             })}
           </div>
+
+          {form.audienceMode === 'all' && (
+            <div className="mt-3 rounded-xl border border-line bg-surface-2/60 p-3 text-[11px] leading-relaxed text-muted">
+              Tous les contacts <span className="font-semibold text-ink">actifs</span> recevront
+              cet email. Les contacts désinscrits ou inactifs sont ignorés.
+            </div>
+          )}
+
+          {form.audienceMode === 'list' && (
+            <div className="mt-3 space-y-2">
+              {lists.length === 0 && (
+                <p className="text-[11.5px] text-muted">
+                  Aucune liste pour l’instant — créez-en une depuis la page Contacts.
+                </p>
+              )}
+              {lists.map((list) => {
+                const active = form.audienceId === list.id
+                return (
+                  <button
+                    key={list.id}
+                    type="button"
+                    onClick={() => update('audienceId', list.id)}
+                    className={cn(
+                      'flex w-full items-center gap-3 rounded-xl border p-3 text-left transition',
+                      active
+                        ? 'border-brand bg-brand-soft/40 ring-2 ring-brand/15'
+                        : 'border-line bg-surface hover:border-line-strong hover:bg-surface-2/60'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'size-2.5 shrink-0 rounded-full bg-linear-to-br',
+                        list.accent
+                      )}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[12.5px] font-semibold text-ink">
+                        {list.name}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11px] text-muted">
+                        {list.description}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-right">
+                      <span className="block text-[12px] font-bold text-ink tabular-nums">
+                        {formatNumber(list.count)}
+                      </span>
+                      <span className="block text-[10px] text-muted">contacts</span>
+                    </span>
+                    <span
+                      className={cn(
+                        'grid size-4.5 shrink-0 place-items-center rounded-full border transition',
+                        active ? 'border-brand bg-brand text-white' : 'border-line-strong'
+                      )}
+                    >
+                      {active && <Check className="size-2.5" />}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {form.audienceMode === 'contacts' && (
+            <div className="mt-3">
+              <Input
+                placeholder="Rechercher un nom ou un email…"
+                value={contactQuery}
+                onChange={(event) => setContactQuery(event.target.value)}
+              />
+              <div className="mt-2 flex items-center justify-between px-1">
+                <button
+                  type="button"
+                  onClick={toggleAllFiltered}
+                  className="text-[11px] font-semibold text-brand hover:underline"
+                >
+                  {allFilteredSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
+                </button>
+                <span className="text-[11px] text-muted">
+                  {form.contactIds.length} sélectionné{form.contactIds.length > 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="mt-1.5 max-h-56 space-y-1 overflow-y-auto pr-1">
+                {filteredContacts.length === 0 && (
+                  <p className="px-1 py-2 text-[11.5px] text-muted">Aucun contact trouvé.</p>
+                )}
+                {filteredContacts.map((contact) => {
+                  const active = form.contactIds.includes(contact.id)
+                  return (
+                    <button
+                      key={contact.id}
+                      type="button"
+                      onClick={() => toggleContact(contact.id)}
+                      className={cn(
+                        'flex w-full items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition',
+                        active
+                          ? 'border-brand bg-brand-soft/40'
+                          : 'border-line bg-surface hover:border-line-strong hover:bg-surface-2/60'
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'grid size-4 shrink-0 place-items-center rounded border transition',
+                          active ? 'border-brand bg-brand text-white' : 'border-line-strong'
+                        )}
+                      >
+                        {active && <Check className="size-2.5" />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[11.5px] font-semibold text-ink">
+                          {contact.name || contact.email}
+                        </span>
+                        <span className="block truncate text-[10.5px] text-muted">
+                          {contact.email}
+                        </span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {errors.audience && (
             <p className="mt-2 text-[11.5px] font-medium text-rose-500">{errors.audience}</p>
           )}
@@ -497,8 +665,11 @@ export function CreateCampaignModal() {
             </div>
             <div className="mt-2 flex items-start gap-1.5 text-[10.5px] leading-relaxed text-muted">
               <CheckCircle2 className="mt-px size-3 shrink-0 text-emerald-500" />
-              Les désabonnés, les rebonds et les contacts inactifs sont exclus automatiquement
-              (environ 4,5 % de la liste).
+              {form.audienceMode === 'list'
+                ? 'Les désabonnés, les rebonds et les contacts inactifs sont exclus automatiquement (environ 4,5 % de la liste).'
+                : form.audienceMode === 'contacts'
+                  ? 'Seuls les contacts cochés ci-dessus recevront cet email.'
+                  : 'Tous les contacts actifs de votre base recevront cet email.'}
             </div>
           </div>
         </div>

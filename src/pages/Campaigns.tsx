@@ -141,8 +141,18 @@ export function Campaigns() {
     })
   }, [campaigns, query, status, sort])
 
-  const listName = (audienceId: string) =>
-    lists.find((list) => list.id === audienceId)?.name ?? 'Toutes les listes'
+  const listName = (campaign: Campaign) => {
+    const count = campaign.contactIds?.length ?? 0
+    if (count > 0)
+      return `${formatNumber(count)} contact${count > 1 ? 's' : ''} ciblé${count > 1 ? 's' : ''}`
+    return lists.find((list) => list.id === campaign.audienceId)?.name ?? 'Tous les contacts'
+  }
+
+  const audienceCount = (campaign: Campaign) => {
+    const count = campaign.contactIds?.length ?? 0
+    if (count > 0) return count
+    return lists.find((list) => list.id === campaign.audienceId)?.count ?? 0
+  }
 
   const duplicate = async (campaign: Campaign) => {
     const ok = await duplicateCampaign(campaign.id)
@@ -169,7 +179,6 @@ export function Campaigns() {
     })
   }
 
-  const audience = detail ? lists.find((list) => list.id === detail.audienceId) : undefined
   const detailSent = detail?.sent ?? 0
   const detailStats = detail
     ? [
@@ -335,13 +344,10 @@ export function Campaigns() {
                     </td>
                     <td className="px-3 py-3">
                       <p className="text-[11.5px] font-medium text-ink-soft">
-                        {listName(campaign.audienceId)}
+                        {listName(campaign)}
                       </p>
                       <p className="text-[10px] text-muted">
-                        {formatNumber(
-                          lists.find((list) => list.id === campaign.audienceId)?.count ?? 0
-                        )}{' '}
-                        contacts
+                        {formatNumber(audienceCount(campaign))} contacts
                       </p>
                     </td>
                     <td className="px-3 py-3 text-right">
@@ -492,8 +498,7 @@ export function Campaigns() {
               <CampaignStatusBadge status={detail.status} />
               <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-[10.5px] font-medium text-muted">
                 <Users className="size-3" />
-                {audience?.name ?? 'Audience inconnue'} ·{' '}
-                {formatNumber(audience?.count ?? 0)} contacts
+                {listName(detail)} · {formatNumber(audienceCount(detail))} contacts
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-[10.5px] font-medium text-muted">
                 <CalendarClock className="size-3" />

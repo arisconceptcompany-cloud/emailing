@@ -21,7 +21,10 @@ export interface NewCampaignInput {
   subject: string
   sender: string
   senderEmail: string
-  audienceId: string
+  /** Liste ciblée ; null = pas de liste (tous les contacts ou sélection précise). */
+  audienceId: string | null
+  /** Contacts choisis un par un (prioritaire sur audienceId). */
+  contactIds?: string[]
   templateId?: string
   scheduledFor?: string
   preview?: string
