@@ -2,16 +2,14 @@ import { useEffect, useId, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
-  ArrowDownRight,
   ArrowRight,
-  ArrowUpRight,
   CalendarDays,
   LayoutTemplate,
   MailOpen,
   Send,
   Sparkles,
-  Target,
   UserPlus,
+  Users,
 } from 'lucide-react'
 import {
   Area,
@@ -24,12 +22,6 @@ import {
 } from 'recharts'
 import { useStore } from '../store/store-context'
 import { api, type OverviewStats } from '../lib/api'
-import {
-  kpiSparklines,
-  monthlyGoal,
-  performanceSeries,
-  recentActivity,
-} from '../lib/data'
 import type { Campaign } from '../lib/types'
 import {
   cn,
@@ -37,6 +29,7 @@ import {
   formatCompact,
   formatNumber,
   formatPercent,
+  formatShortDate,
   percent,
   relativeTime,
 } from '../lib/utils'
@@ -44,19 +37,15 @@ import { PageHeader } from '../components/ui/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
-import { Progress } from '../components/ui/Progress'
 import { CampaignStatusBadge } from '../components/ui/Badge'
 import { ChartTooltip } from '../components/ChartTooltip'
 
 interface StatCardProps {
   label: string
   value: string
-  delta: string
-  deltaLabel: string
+  hint: string
   icon: typeof Send
   tone: string
-  trend: 'up' | 'down'
-  good?: boolean
   spark: number[]
   sparkColor: string
   delay: number
@@ -101,12 +90,9 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
 function StatCard({
   label,
   value,
-  delta,
-  deltaLabel,
+  hint,
   icon: Icon,
   tone,
-  trend,
-  good = true,
   spark,
   sparkColor,
   delay,
@@ -122,24 +108,7 @@ function StatCard({
           <p className="mt-1.5 text-[24px] leading-none font-extrabold tracking-tight text-ink tabular-nums">
             {value}
           </p>
-          <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[10.5px]">
-            <span
-              className={cn(
-                'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-bold',
-                good
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-              )}
-            >
-              {trend === 'up' ? (
-                <ArrowUpRight className="size-3" />
-              ) : (
-                <ArrowDownRight className="size-3" />
-              )}
-              {delta}
-            </span>
-            <span className="text-muted">{deltaLabel}</span>
-          </div>
+          <p className="mt-2.5 text-[10.5px] text-muted">{hint}</p>
         </div>
         <span
           className={cn(
@@ -151,9 +120,13 @@ function StatCard({
         </span>
       </div>
       <div className="mt-3 flex items-end justify-between gap-2">
-        <Sparkline values={spark} color={sparkColor} />
+        {spark.length > 1 ? (
+          <Sparkline values={spark} color={sparkColor} />
+        ) : (
+          <span className="h-9" />
+        )}
         <span className="pb-1 text-[9px] font-medium tracking-wider text-muted/70 uppercase">
-          30 derniers jours
+          {spark.length > 1 ? `${spark.length} derniers envois` : 'Aucun envoi'}
         </span>
       </div>
     </Card>
@@ -207,8 +180,8 @@ function UpcomingCampaign({ campaign }: { campaign: Campaign }) {
 }
 
 export function Dashboard() {
-  const { campaigns, openComposer, settings } = useStore()
-  const greetingName = settings?.firstName?.trim() || 'Awa'
+  const { campaigns, contacts, lists, templates, openComposer, settings } = useStore()
+  const greetingName = settings?.firstName?.trim() || ''
   const [range, setRange] = useState<(typeof ranges)[number]['id']>('30j')
   const [stats, setStats] = useState<OverviewStats | null>(null)
 
@@ -220,15 +193,32 @@ export function Dashboard() {
         if (active) setStats(data)
       })
       .catch(() => {
-        /* les KPI retombent sur les valeurs de démonstration */
+        /* KPI affichés avec un tiret si l'API est indisponible */
       })
     return () => {
       active = false
     }
   }, [])
 
-  const data = performanceSeries[range]
-  const goalPct = (monthlyGoal.current / monthlyGoal.target) * 100
+  // Toutes les séries sont calculées à partir des vraies campagnes.
+  const sentCampaigns = campaigns
+    .filter((campaign) => campaign.sent > 0)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  const sentSpark = sentCampaigns.slice(-10).map((campaign) => campaign.sent)
+  const openSpark = sentCampaigns
+    .slice(-10)
+    .map((campaign) => percent(campaign.opened, campaign.sent))
+
+  const rangeDays = range === '30j' ? 30 : range === '90j' ? 90 : 365
+  const cutoff = Date.now() - rangeDays * 86400000
+  const data = sentCampaigns
+    .filter((campaign) => new Date(campaign.date).getTime() >= cutoff)
+    .map((campaign) => ({
+      label: formatShortDate(campaign.date),
+      sent: campaign.sent,
+      opened: campaign.opened,
+    }))
+
   const scheduled = campaigns
     .filter((campaign) => campaign.status === 'scheduled')
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -247,12 +237,32 @@ export function Dashboard() {
     { sent: 0, opened: 0 }
   )
 
+  const activity = campaigns.slice(0, 5).map((campaign) => ({
+    id: campaign.id,
+    type:
+      campaign.status === 'sent'
+        ? ('send' as const)
+        : campaign.status === 'scheduled'
+          ? ('template' as const)
+          : ('contact' as const),
+    title: campaign.name,
+    meta: campaign.sent
+      ? `${formatNumber(campaign.sent)} envoyé${campaign.sent > 1 ? 's' : ''} · ${percent(campaign.opened, campaign.sent).toFixed(1).replace('.', ',')} % ouverts`
+      : campaign.status === 'scheduled'
+        ? 'Envoi planifié'
+        : 'Brouillon',
+    time: campaign.date,
+  }))
+
+  const activeContacts = contacts.filter((contact) => contact.status === 'active').length
+
   return (
     <div className="space-y-6">
       <PageHeader
         title={
           <span>
-            Bonjour, {greetingName} <span className="inline-block">👋</span>
+            Bonjour{greetingName ? `, ${greetingName}` : ''}{' '}
+            <span className="inline-block">👋</span>
           </span>
         }
         subtitle={`Nous sommes le ${today}. Voici ce qui se passe dans votre espace emailing.`}
@@ -278,25 +288,21 @@ export function Dashboard() {
       <div className="grid gap-4 sm:grid-cols-2">
         <StatCard
           label="Emails envoyés"
-          value={stats ? formatNumber(stats.campaigns.sent) : '128 940'}
-          delta="+12,4 %"
-          deltaLabel="vs mois dernier"
+          value={stats ? formatNumber(stats.campaigns.sent) : '—'}
+          hint={`${formatNumber(sentCampaigns.length)} campagne${sentCampaigns.length > 1 ? 's' : ''} envoyée${sentCampaigns.length > 1 ? 's' : ''}`}
           icon={Send}
           tone="from-indigo-500 to-violet-500 shadow-indigo-500/30"
-          trend="up"
-          spark={kpiSparklines.sent}
+          spark={sentSpark}
           sparkColor="#6d5dfc"
           delay={0}
         />
         <StatCard
           label="Taux d’ouverture"
-          value={stats ? formatPercent(stats.campaigns.openRate) : '47,9 %'}
-          delta="+3,2 pts"
-          deltaLabel="vs mois dernier"
+          value={stats ? formatPercent(stats.campaigns.openRate) : '—'}
+          hint={stats ? `${formatNumber(stats.campaigns.opened)} ouvertures` : 'Aucune donnée'}
           icon={MailOpen}
           tone="from-sky-500 to-cyan-400 shadow-sky-500/30"
-          trend="up"
-          spark={kpiSparklines.open}
+          spark={openSpark}
           sparkColor="#0ea5e9"
           delay={60}
         />
@@ -344,8 +350,18 @@ export function Dashboard() {
             </span>
           </div>
 
-          <div className="mt-2 h-[250px] w-full sm:h-[276px]">
-            <ResponsiveContainer width="100%" height="100%">
+          {data.length === 0 ? (
+            <div className="mt-4 grid h-[250px] place-items-center rounded-xl border border-dashed border-line px-6 text-center sm:h-[276px]">
+              <div>
+                <p className="text-[12px] font-semibold text-ink">Aucun envoi sur cette période</p>
+                <p className="mt-1 text-[11px] text-muted">
+                  Les courbes apparaîtront après votre première campagne envoyée.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-2 h-[250px] w-full sm:h-[276px]">
+              <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data} margin={{ top: 12, right: 6, left: -22, bottom: 0 }}>
                 <defs>
                   <linearGradient id="sentFill" x1="0" y1="0" x2="0" y2="1">
@@ -398,72 +414,40 @@ export function Dashboard() {
                 />
               </AreaChart>
             </ResponsiveContainer>
-          </div>
+            </div>
+          )}
         </Card>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
           <Card className="card-sheen p-5">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[13px] font-bold tracking-tight text-ink">Objectif du mois</p>
-                <p className="mt-0.5 text-[11px] text-muted">Emails envoyés en novembre</p>
+                <p className="text-[13px] font-bold tracking-tight text-ink">Votre base</p>
+                <p className="mt-0.5 text-[11px] text-muted">Chiffres réels de votre compte</p>
               </div>
               <span className="grid size-8 place-items-center rounded-lg bg-brand-soft text-brand-strong">
-                <Target className="size-4" />
+                <Users className="size-4" />
               </span>
             </div>
 
-            <div className="relative mx-auto mt-3 size-[136px]">
-              <svg viewBox="0 0 128 128" className="size-full -rotate-90">
-                <defs>
-                  <linearGradient id="goalGradient" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="var(--brand)" />
-                    <stop offset="100%" stopColor="#a855f7" />
-                  </linearGradient>
-                </defs>
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="54"
-                  fill="none"
-                  stroke="var(--surface-3)"
-                  strokeWidth="10"
-                />
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="54"
-                  fill="none"
-                  stroke="url(#goalGradient)"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray={`${(goalPct / 100) * 339.29} 339.29`}
-                />
-              </svg>
-              <div className="absolute inset-0 grid place-items-center">
-                <div className="text-center">
-                  <p className="text-[26px] leading-none font-extrabold tracking-tight text-ink">
-                    {Math.round(goalPct)} %
-                  </p>
-                  <p className="mt-1 text-[9.5px] font-medium tracking-wide text-muted uppercase">
-                    de l’objectif
-                  </p>
+            <div className="mt-4 space-y-2.5">
+              {[
+                { label: 'Contacts actifs', value: activeContacts },
+                { label: 'Listes', value: lists.length },
+                { label: 'Modèles', value: templates.length },
+                { label: 'Campagnes', value: campaigns.length },
+              ].map((row) => (
+                <div
+                  key={row.label}
+                  className="flex items-center justify-between rounded-xl bg-surface-2/60 px-3 py-2"
+                >
+                  <span className="text-[11.5px] font-medium text-ink-soft">{row.label}</span>
+                  <span className="text-[12.5px] font-bold text-ink tabular-nums">
+                    {formatNumber(row.value)}
+                  </span>
                 </div>
-              </div>
+              ))}
             </div>
-
-            <div className="mt-3 flex items-center justify-between text-[10.5px]">
-              <span className="font-semibold text-ink">{formatNumber(monthlyGoal.current)}</span>
-              <span className="text-muted">/ {formatNumber(monthlyGoal.target)}</span>
-            </div>
-            <Progress value={goalPct} className="mt-1.5" />
-            <p className="mt-2 text-[10.5px] leading-relaxed text-muted">
-              Encore{' '}
-              <span className="font-semibold text-ink">
-                {formatNumber(monthlyGoal.target - monthlyGoal.current)}
-              </span>{' '}
-              emails pour atteindre l’objectif.
-            </p>
           </Card>
 
           <Card className="p-5">
@@ -550,16 +534,18 @@ export function Dashboard() {
         <Card className="p-5">
           <div className="flex items-center justify-between">
             <p className="text-[13px] font-bold tracking-tight text-ink">Activité récente</p>
-            <span className="flex items-center gap-1 text-[9.5px] font-semibold text-emerald-600 dark:text-emerald-400">
-              <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" /> En direct
-            </span>
           </div>
           <div className="mt-3 space-y-3">
-            {recentActivity.map((activity) => {
-              const meta = activityIcon[activity.type]
+            {activity.length === 0 && (
+              <p className="rounded-xl border border-dashed border-line p-4 text-center text-[11px] text-muted">
+                Aucune activité pour l’instant.
+              </p>
+            )}
+            {activity.map((item) => {
+              const meta = activityIcon[item.type]
               const Icon = meta.icon
               return (
-                <div key={activity.id} className="flex gap-2.5">
+                <div key={item.id} className="flex gap-2.5">
                   <span
                     className={cn(
                       'mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg',
@@ -570,13 +556,13 @@ export function Dashboard() {
                   </span>
                   <div className="min-w-0">
                     <p className="text-[11.5px] leading-snug font-semibold text-ink">
-                      {activity.title}
+                      {item.title}
                     </p>
                     <p className="mt-0.5 text-[10.5px] leading-relaxed text-muted">
-                      {activity.meta}
+                      {item.meta}
                     </p>
                     <p className="mt-0.5 text-[9.5px] text-muted/70">
-                      {relativeTime(activity.time)}
+                      {relativeTime(item.time)}
                     </p>
                   </div>
                 </div>
