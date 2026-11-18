@@ -60,8 +60,8 @@ export function CreateCampaignModal() {
 
   const defaultSenderName = settings
     ? `${settings.firstName} ${settings.lastName}`.trim()
-    : 'Awa Diop'
-  const defaultSenderEmail = settings?.senderEmail || 'hello@aris.email'
+    : ''
+  const defaultSenderEmail = settings?.senderEmail || ''
 
   const [step, setStep] = useState(0)
   const [errors, setErrors] = useState<FormErrors>({})

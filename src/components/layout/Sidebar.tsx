@@ -60,8 +60,8 @@ export function Sidebar({
 }: SidebarProps) {
   const { campaigns, settings } = useStore()
   const accountName = settings
-    ? `${settings.firstName} ${settings.lastName}`.trim()
-    : 'Awa Diop'
+    ? `${settings.firstName} ${settings.lastName}`.trim() || 'Mon compte'
+    : 'Mon compte'
   const activeCount = campaigns.filter(
     (campaign) => campaign.status === 'sending' || campaign.status === 'scheduled'
   ).length
