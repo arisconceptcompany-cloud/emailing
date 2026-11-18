@@ -6,7 +6,6 @@ import {
   CalendarDays,
   Download,
   MailOpen,
-  MousePointerClick,
   TrendingUp,
 } from 'lucide-react'
 import {
@@ -28,7 +27,6 @@ import {
   deviceData,
   funnelData,
   hourlyData,
-  topLinks,
   weeklySeries,
 } from '../lib/data'
 import {
@@ -42,7 +40,6 @@ import { PageHeader } from '../components/ui/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
-import { Progress } from '../components/ui/Progress'
 import { ChartTooltip } from '../components/ChartTooltip'
 
 function AnalyticsKpi({
@@ -161,7 +158,6 @@ export function Analytics() {
     [campaigns]
   )
 
-  const maxLink = Math.max(...topLinks.map((link) => link.clicks))
   const maxHour = Math.max(...hourlyData.map((hour) => hour.value))
   const peakHour = hourlyData.find((hour) => hour.value === maxHour)?.hour
 
@@ -169,7 +165,7 @@ export function Analytics() {
     <div className="space-y-5">
       <PageHeader
         title="Analyses"
-        subtitle="Comprenez ce qui fonctionne : ouvertures, clics, appareils et meilleurs moments d’envoi."
+        subtitle="Comprenez ce qui fonctionne : ouvertures, appareils et meilleurs moments d’envoi."
         actions={
           <>
             <Select
@@ -198,7 +194,7 @@ export function Analytics() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3">
         <AnalyticsKpi
           label="Taux d’ouverture"
           value="47,9 %"
@@ -206,14 +202,6 @@ export function Analytics() {
           trend="up"
           icon={MailOpen}
           tone="bg-brand-soft text-brand-strong"
-        />
-        <AnalyticsKpi
-          label="Taux de clic"
-          value="11,0 %"
-          delta="+1,8 pt"
-          trend="up"
-          icon={MousePointerClick}
-          tone="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
         />
         <AnalyticsKpi
           label="Taux de rebond"
@@ -364,7 +352,7 @@ export function Analytics() {
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -401,36 +389,6 @@ export function Analytics() {
                 </div>
               )
             })}
-          </div>
-        </Card>
-
-        <Card className="p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[13px] font-bold tracking-tight text-ink">Liens les plus cliqués</p>
-              <p className="mt-0.5 text-[11px] text-muted">Toutes campagnes confondues</p>
-            </div>
-            <MousePointerClick className="size-4 text-muted" />
-          </div>
-          <div className="mt-3 space-y-3">
-            {topLinks.map((link, index) => (
-              <div key={link.label}>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span className="grid size-4 shrink-0 place-items-center rounded bg-surface-2 text-[8.5px] font-bold text-muted">
-                      {index + 1}
-                    </span>
-                    <span className="truncate text-[10.5px] font-medium text-ink-soft">
-                      {link.label}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-[10.5px] font-semibold text-ink tabular-nums">
-                    {formatNumber(link.clicks)}
-                  </span>
-                </div>
-                <Progress value={(link.clicks / maxLink) * 100} className="mt-1.5" />
-              </div>
-            ))}
           </div>
         </Card>
 
@@ -496,7 +454,6 @@ export function Analytics() {
                 <th className="px-3 py-2 font-bold">Campagne</th>
                 <th className="px-3 py-2 text-right font-bold">Envoyés</th>
                 <th className="px-3 py-2 text-right font-bold">Ouverture</th>
-                <th className="px-4 py-2 text-right font-bold sm:px-5">Clics</th>
               </tr>
             </thead>
             <tbody>
@@ -532,9 +489,6 @@ export function Analytics() {
                     <span className="inline-flex items-center rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
                       {percent(campaign.opened, campaign.sent).toFixed(1).replace('.', ',')} %
                     </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-right text-[11.5px] font-medium text-ink-soft tabular-nums sm:px-5">
-                    {formatNumber(campaign.clicked)}
                   </td>
                 </tr>
               ))}

@@ -763,7 +763,6 @@ export const funnelData = [
   { label: 'Emails envoyés', value: 128940, color: 'from-indigo-500 to-violet-500' },
   { label: 'Délivrés', value: 124310, color: 'from-violet-500 to-purple-500' },
   { label: 'Ouverts', value: 61820, color: 'from-sky-500 to-cyan-400' },
-  { label: 'Cliqués', value: 14210, color: 'from-emerald-500 to-teal-400' },
   { label: 'Conversions', value: 3860, color: 'from-amber-500 to-orange-400' },
 ]
 

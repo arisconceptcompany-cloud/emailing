@@ -188,11 +188,6 @@ export function Campaigns() {
           value: formatNumber(detail.opened),
           hint: detail.sent ? `${percent(detail.opened, detail.sent).toFixed(1).replace('.', ',')} %` : '—',
         },
-        {
-          label: 'Cliqués',
-          value: formatNumber(detail.clicked),
-          hint: detail.sent ? `${percent(detail.clicked, detail.sent).toFixed(1).replace('.', ',')} %` : '—',
-        },
         { label: 'Rebonds', value: formatNumber(detail.bounced), hint: 'adresses invalides' },
         {
           label: 'Désabonnés',
@@ -310,7 +305,6 @@ export function Campaigns() {
                   <th className="px-3 py-2.5 font-bold">Audience</th>
                   <th className="px-3 py-2.5 text-right font-bold">Envoyés</th>
                   <th className="px-3 py-2.5 text-right font-bold">Ouverture</th>
-                  <th className="px-3 py-2.5 text-right font-bold">Clics</th>
                   <th className="px-3 py-2.5 font-bold">Date</th>
                   <th className="px-4 py-2.5 text-right font-bold sm:px-5">
                     <span className="sr-only">Actions</span>
@@ -360,11 +354,6 @@ export function Campaigns() {
                         {campaign.sent
                           ? `${percent(campaign.opened, campaign.sent).toFixed(1).replace('.', ',')} %`
                           : '—'}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 text-right">
-                      <span className="text-[12px] font-semibold text-ink tabular-nums">
-                        {campaign.clicked ? formatNumber(campaign.clicked) : '—'}
                       </span>
                     </td>
                     <td className="px-3 py-3">
@@ -534,7 +523,6 @@ export function Campaigns() {
                 {[
                   { label: 'Envoyés', value: detail.sent },
                   { label: 'Ouverts', value: detail.opened },
-                  { label: 'Cliqués', value: detail.clicked },
                 ].map((step) => (
                   <div key={step.label}>
                     <div className="mb-1 flex items-center justify-between text-[11px]">

@@ -8,7 +8,6 @@ import {
   CalendarDays,
   LayoutTemplate,
   MailOpen,
-  MousePointerClick,
   Send,
   Sparkles,
   Target,
@@ -276,7 +275,7 @@ export function Dashboard() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <StatCard
           label="Emails envoyés"
           value={stats ? formatNumber(stats.campaigns.sent) : '128 940'}
@@ -300,18 +299,6 @@ export function Dashboard() {
           spark={kpiSparklines.open}
           sparkColor="#0ea5e9"
           delay={60}
-        />
-        <StatCard
-          label="Taux de clic"
-          value={stats ? formatPercent(stats.campaigns.clickRate) : '11,0 %'}
-          delta="+1,8 pt"
-          deltaLabel="vs mois dernier"
-          icon={MousePointerClick}
-          tone="from-emerald-500 to-teal-400 shadow-emerald-500/30"
-          trend="up"
-          spark={kpiSparklines.click}
-          sparkColor="#10b981"
-          delay={120}
         />
       </div>
 
@@ -525,7 +512,6 @@ export function Dashboard() {
                   <th className="px-4 py-2 font-bold sm:px-5">Campagne</th>
                   <th className="px-3 py-2 font-bold">Statut</th>
                   <th className="px-3 py-2 text-right font-bold">Ouverture</th>
-                  <th className="px-4 py-2 text-right font-bold sm:px-5">Clics</th>
                 </tr>
               </thead>
               <tbody>
@@ -552,11 +538,6 @@ export function Dashboard() {
                         {campaign.sent
                           ? `${percent(campaign.opened, campaign.sent).toFixed(1).replace('.', ',')} %`
                           : '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-right sm:px-5">
-                      <span className="text-[12px] font-semibold text-ink tabular-nums">
-                        {campaign.clicked ? formatNumber(campaign.clicked) : '—'}
                       </span>
                     </td>
                   </tr>

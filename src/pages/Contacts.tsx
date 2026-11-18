@@ -6,7 +6,6 @@ import {
   FileText,
   ListFilter,
   MailOpen,
-  MousePointerClick,
   Pencil,
   Plus,
   Search,
@@ -615,9 +614,6 @@ export function Contacts() {
                       <div className="flex items-center gap-3 text-[10.5px] text-muted">
                         <span className="flex items-center gap-1" title="Ouvertures">
                           <MailOpen className="size-3" /> {contact.opens}
-                        </span>
-                        <span className="flex items-center gap-1" title="Clics">
-                          <MousePointerClick className="size-3" /> {contact.clicks}
                         </span>
                       </div>
                       <div className="mt-1 flex w-24 gap-0.5">

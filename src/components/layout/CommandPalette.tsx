@@ -61,7 +61,7 @@ const pages: CommandItem[] = [
   {
     id: 'page-analytics',
     title: 'Analyses',
-    subtitle: 'Ouvertures, clics et conversions',
+    subtitle: 'Ouvertures et conversions',
     category: 'Pages',
     icon: BarChart3,
     to: '/analyses',
