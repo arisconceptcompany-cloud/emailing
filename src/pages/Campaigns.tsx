@@ -553,7 +553,8 @@ export function Campaigns() {
                   Expéditeur
                 </p>
                 <p className="mt-1 font-medium text-ink">
-                  {detail.sender} · {detail.senderEmail || 'hello@aris.email'}
+                  {detail.sender || '—'}
+                  {detail.senderEmail ? ` · ${detail.senderEmail}` : ''}
                 </p>
               </div>
               <div>
