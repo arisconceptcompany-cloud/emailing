@@ -81,6 +81,39 @@ export interface MailStatus {
   maxRecipients: number
 }
 
+export interface SmtpConfig {
+  smtpHost: string
+  smtpPort: number
+  smtpUser: string
+  /** Le mot de passe n'est jamais renvoyé par l'API. */
+  smtpPasswordSet: boolean
+  smtpStarttls: boolean
+  smtpSsl: boolean
+  mailFrom: string
+  mailFromName: string
+  source: 'env' | 'application'
+  activeHost: string
+  activePort: number
+  activeUser: string
+  activeMailFrom: string
+  activeMailFromName: string
+  activeStarttls: boolean
+  activeSsl: boolean
+}
+
+export interface SmtpConfigUpdate {
+  smtpHost?: string
+  smtpPort?: number
+  smtpUser?: string
+  /** Vide ou absent = conserver le mot de passe déjà enregistré. */
+  smtpPassword?: string
+  smtpStarttls?: boolean
+  smtpSsl?: boolean
+  mailFrom?: string
+  mailFromName?: string
+  clearSmtp?: boolean
+}
+
 export interface DnsCheck {
   name: string
   status: 'ok' | 'managed' | 'missing'
@@ -205,6 +238,21 @@ export const api = {
   mail: {
     status: () => request<MailStatus>('/mail/status'),
     domain: () => request<MailDomainStatus>('/mail/domain'),
+    testSmtp: (input: {
+      email: string
+      smtpHost?: string
+      smtpPort?: number
+      smtpUser?: string
+      smtpPassword?: string
+      smtpStarttls?: boolean
+      smtpSsl?: boolean
+      mailFrom?: string
+      mailFromName?: string
+    }) =>
+      request<TestSendResult>('/mail/test-smtp', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
     test: (input: {
       email: string
       subject?: string
@@ -223,6 +271,12 @@ export const api = {
     get: () => request<AppSettings>('/settings'),
     update: (input: Partial<AppSettings>) =>
       request<AppSettings>('/settings', {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      }),
+    getSmtp: () => request<SmtpConfig>('/settings/smtp'),
+    updateSmtp: (input: SmtpConfigUpdate) =>
+      request<SmtpConfig>('/settings/smtp', {
         method: 'PUT',
         body: JSON.stringify(input),
       }),
