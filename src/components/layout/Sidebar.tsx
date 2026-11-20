@@ -40,7 +40,9 @@ const secondaryNav = [
 function Logo({ collapsed }: { collapsed: boolean }) {
   return (
     <div className="flex items-center gap-2.5 overflow-hidden">
-      <BrandLogo className="size-9.5 shrink-0" />
+      <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-brand to-violet-500 shadow-md shadow-brand/25">
+        <BrandLogo tone="white" className="size-6" />
+      </div>
       <div className={cn('min-w-0 transition-opacity', collapsed && 'lg:hidden')}>
         <p className="text-[15px] leading-tight font-extrabold tracking-tight text-ink">Aris</p>
         <p className="text-[9.5px] font-semibold tracking-[0.18em] text-muted uppercase">

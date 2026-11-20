@@ -110,9 +110,7 @@ export function Login({ initialMode = 'login' }: LoginProps) {
         <div className="pointer-events-none absolute -bottom-40 -left-20 size-[420px] rounded-full bg-fuchsia-400/20 blur-3xl" />
 
         <div className="relative flex items-center gap-3">
-          <div className="grid size-12 place-items-center rounded-2xl bg-white shadow-lg">
-            <BrandLogo className="size-8" />
-          </div>
+          <BrandLogo tone="white" className="size-11 drop-shadow-md" />
           <div>
             <p className="text-lg leading-tight font-extrabold tracking-tight">Aris</p>
             <p className="text-[10px] font-semibold tracking-[0.2em] text-white/70 uppercase">
@@ -122,9 +120,6 @@ export function Login({ initialMode = 'login' }: LoginProps) {
         </div>
 
         <div className="relative max-w-lg">
-          <div className="mb-6 inline-flex rounded-2xl bg-white p-3 shadow-xl shadow-indigo-950/20">
-            <BrandLogo variant="full" className="h-36 w-auto" />
-          </div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-semibold backdrop-blur">
             <ShieldCheck className="size-3.5" /> Espace sécurisé
           </span>
@@ -165,8 +160,8 @@ export function Login({ initialMode = 'login' }: LoginProps) {
       <div className="flex items-center justify-center px-4 py-10 sm:px-8">
         <div className="w-full max-w-[420px]">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <div className="grid size-11 place-items-center rounded-2xl border border-line bg-surface shadow-sm">
-              <BrandLogo className="size-7" />
+            <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-brand to-violet-500 shadow-md shadow-brand/25">
+              <BrandLogo tone="white" className="size-6" />
             </div>
             <div>
               <p className="text-[15px] font-extrabold tracking-tight text-ink">Aris</p>
