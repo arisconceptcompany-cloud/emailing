@@ -109,14 +109,12 @@ export function Login({ initialMode = 'login' }: LoginProps) {
         <div className="pointer-events-none absolute -top-32 -right-24 size-[420px] rounded-full bg-white/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-40 -left-20 size-[420px] rounded-full bg-fuchsia-400/20 blur-3xl" />
 
-        <div className="relative flex items-center gap-3">
-          <BrandLogo tone="white" className="size-11 drop-shadow-md" />
-          <div>
-            <p className="text-lg leading-tight font-extrabold tracking-tight">Aris</p>
-            <p className="text-[10px] font-semibold tracking-[0.2em] text-white/70 uppercase">
-              Emailing suite
-            </p>
-          </div>
+        <div className="relative">
+          <BrandLogo
+            variant="full"
+            tone="white"
+            className="h-32 w-auto drop-shadow-[0_4px_18px_rgba(0,0,0,0.35)]"
+          />
         </div>
 
         <div className="relative max-w-lg">
@@ -162,12 +160,12 @@ export function Login({ initialMode = 'login' }: LoginProps) {
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <BrandLogo
             variant="full"
-            className="h-[560px] max-h-[72vh] w-auto opacity-[0.055] dark:hidden"
+            className="h-[560px] max-h-[72vh] w-auto opacity-[0.07] dark:hidden"
           />
           <BrandLogo
             variant="full"
             tone="white"
-            className="hidden h-[560px] max-h-[72vh] w-auto opacity-[0.07] dark:block"
+            className="hidden h-[560px] max-h-[72vh] w-auto opacity-[0.18] dark:block"
           />
         </div>
         <div className="relative z-10 w-full max-w-[420px]">
