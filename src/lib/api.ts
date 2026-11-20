@@ -57,6 +57,9 @@ export interface RegisterInput {
   name: string
   email: string
   password: string
+  passwordConfirm: string
+  termsAccepted: boolean
+  privacyAccepted: boolean
 }
 
 export interface LoginInput {

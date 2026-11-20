@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
   BarChart3,
@@ -38,7 +38,10 @@ export function Login({ initialMode = 'login' }: LoginProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -56,12 +59,35 @@ export function Login({ initialMode = 'login' }: LoginProps) {
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     setError(null)
+    if (mode === 'register') {
+      if (password.length < 8) {
+        setError('Le mot de passe doit contenir au moins 8 caractères.')
+        return
+      }
+      if (password !== passwordConfirm) {
+        setError('Les mots de passe ne correspondent pas.')
+        return
+      }
+      if (!termsAccepted || !privacyAccepted) {
+        setError(
+          'Veuillez accepter les conditions d’utilisation et la politique de confidentialité.'
+        )
+        return
+      }
+    }
     setBusy(true)
     try {
       if (mode === 'login') {
         await signIn({ email: email.trim(), password })
       } else {
-        await signUp({ name: name.trim(), email: email.trim(), password })
+        await signUp({
+          name: name.trim(),
+          email: email.trim(),
+          password,
+          passwordConfirm,
+          termsAccepted,
+          privacyAccepted,
+        })
       }
       navigate(from, { replace: true })
     } catch (caught) {
@@ -221,6 +247,68 @@ export function Login({ initialMode = 'login' }: LoginProps) {
                 {showPassword ? 'Masquer' : 'Afficher'} le mot de passe
               </button>
             </div>
+
+            {mode === 'register' && (
+              <>
+                <div>
+                  <Input
+                    label="Confirmer le mot de passe"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Ressaisissez votre mot de passe"
+                    autoComplete="new-password"
+                    value={passwordConfirm}
+                    onChange={(event) => setPasswordConfirm(event.target.value)}
+                    required
+                  />
+                  {passwordConfirm && password !== passwordConfirm && (
+                    <p className="mt-1.5 text-[11.5px] font-medium text-rose-500">
+                      Les mots de passe ne correspondent pas.
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2.5 rounded-xl border border-line bg-surface-2/40 p-3.5">
+                  <label className="flex cursor-pointer items-start gap-2.5">
+                    <input
+                      type="checkbox"
+                      checked={termsAccepted}
+                      onChange={(event) => setTermsAccepted(event.target.checked)}
+                      className="mt-0.5 size-4 shrink-0 cursor-pointer rounded border-line accent-brand"
+                    />
+                    <span className="text-[11.5px] leading-relaxed text-ink-soft">
+                      J’accepte les{' '}
+                      <Link
+                        to="/conditions"
+                        target="_blank"
+                        className="font-semibold text-brand hover:underline"
+                      >
+                        conditions d’utilisation
+                      </Link>
+                      .
+                    </span>
+                  </label>
+                  <label className="flex cursor-pointer items-start gap-2.5">
+                    <input
+                      type="checkbox"
+                      checked={privacyAccepted}
+                      onChange={(event) => setPrivacyAccepted(event.target.checked)}
+                      className="mt-0.5 size-4 shrink-0 cursor-pointer rounded border-line accent-brand"
+                    />
+                    <span className="text-[11.5px] leading-relaxed text-ink-soft">
+                      J’accepte la{' '}
+                      <Link
+                        to="/confidentialite"
+                        target="_blank"
+                        className="font-semibold text-brand hover:underline"
+                      >
+                        politique de confidentialité
+                      </Link>
+                      .
+                    </span>
+                  </label>
+                </div>
+              </>
+            )}
 
             <Button type="submit" size="lg" loading={busy} className="w-full" icon={<ArrowRight className="size-4" />}>
               {mode === 'login' ? 'Se connecter' : 'Créer mon compte'}

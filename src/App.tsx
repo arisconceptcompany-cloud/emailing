@@ -11,6 +11,7 @@ import { Analytics } from './pages/Analytics'
 import { Settings } from './pages/Settings'
 import { Help } from './pages/Help'
 import { Login } from './pages/Login'
+import { Legal } from './pages/Legal'
 import { NotFound } from './pages/NotFound'
 
 function RequireAuth() {
@@ -29,6 +30,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/inscription" element={<Login initialMode="register" />} />
+          <Route path="/conditions" element={<Legal kind="terms" />} />
+          <Route path="/confidentialite" element={<Legal kind="privacy" />} />
           <Route element={<RequireAuth />}>
             <Route index element={<Dashboard />} />
             <Route path="campagnes" element={<Campaigns />} />

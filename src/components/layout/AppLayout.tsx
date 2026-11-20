@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { CommandPalette } from './CommandPalette'
@@ -59,12 +59,12 @@ export function AppLayout() {
               <span className="size-1.5 rounded-full bg-emerald-500" />
               Tous les services opérationnels
             </span>
-            <a href="#" className="transition hover:text-ink">
-              Statut
-            </a>
-            <a href="#" className="transition hover:text-ink">
+            <Link to="/conditions" className="transition hover:text-ink">
+              Conditions
+            </Link>
+            <Link to="/confidentialite" className="transition hover:text-ink">
               Confidentialité
-            </a>
+            </Link>
           </div>
         </footer>
       </div>
