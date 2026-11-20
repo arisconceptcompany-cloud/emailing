@@ -310,9 +310,21 @@ export function Login({ initialMode = 'login' }: LoginProps) {
               </>
             )}
 
-            <Button type="submit" size="lg" loading={busy} className="w-full" icon={<ArrowRight className="size-4" />}>
+            <Button
+              type="submit"
+              size="lg"
+              loading={busy}
+              disabled={mode === 'register' && (!termsAccepted || !privacyAccepted)}
+              className="w-full"
+              icon={<ArrowRight className="size-4" />}
+            >
               {mode === 'login' ? 'Se connecter' : 'Créer mon compte'}
             </Button>
+            {mode === 'register' && (!termsAccepted || !privacyAccepted) && (
+              <p className="text-center text-[11px] text-muted">
+                Cochez les deux cases ci-dessus pour activer la création du compte.
+              </p>
+            )}
           </form>
 
           <div className="mt-6 flex items-start gap-2 rounded-xl border border-line bg-surface px-3.5 py-3">
