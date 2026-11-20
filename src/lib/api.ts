@@ -312,7 +312,8 @@ export const api = {
   },
 
   mail: {
-    status: () => request<MailStatus>('/mail/status'),
+    status: (force = false) =>
+      request<MailStatus>(`/mail/status${force ? '?force=true' : ''}`),
     domain: () => request<MailDomainStatus>('/mail/domain'),
     testSmtp: (input: {
       email: string

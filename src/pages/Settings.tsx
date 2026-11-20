@@ -176,10 +176,10 @@ export function Settings() {
   const [checkingDomain, setCheckingDomain] = useState(false)
   const [domainError, setDomainError] = useState(false)
 
-  const checkMail = async () => {
+  const checkMail = async (force = false) => {
     setCheckingMail(true)
     try {
-      setMail(await api.mail.status())
+      setMail(await api.mail.status(force))
     } catch {
       setMail(null)
     } finally {
@@ -829,7 +829,7 @@ export function Settings() {
               size="sm"
               className="mt-4 w-full"
               icon={<RefreshCw className={cn('size-3.5', checkingMail && 'animate-spin')} />}
-              onClick={() => void checkMail()}
+              onClick={() => void checkMail(true)}
             >
               Tester la connexion SMTP
             </Button>
