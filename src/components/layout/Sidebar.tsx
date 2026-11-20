@@ -15,7 +15,6 @@ import {
 import { useStore } from '../../store/store-context'
 import { cn } from '../../lib/utils'
 import { Avatar } from '../ui/Avatar'
-import { BrandLogo } from '../ui/BrandLogo'
 
 interface SidebarProps {
   mobileOpen: boolean
@@ -40,7 +39,12 @@ const secondaryNav = [
 function Logo({ collapsed }: { collapsed: boolean }) {
   return (
     <div className="flex items-center gap-2.5 overflow-hidden">
-      <BrandLogo className="size-10 shrink-0" />
+      <img
+        src="/logo.png"
+        alt="Aris"
+        draggable={false}
+        className="size-10 shrink-0 object-contain select-none"
+      />
       <div className={cn('min-w-0 transition-opacity', collapsed && 'lg:hidden')}>
         <p className="text-[15px] leading-tight font-extrabold tracking-tight text-ink">Aris</p>
         <p className="text-[9.5px] font-semibold tracking-[0.18em] text-muted uppercase">

@@ -1,13 +1,15 @@
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import { BrandLogo } from '../components/ui/BrandLogo'
 
 export function NotFound() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-      <div className="mb-6 grid size-20 place-items-center rounded-2xl bg-linear-to-br from-brand to-violet-500 shadow-lg shadow-brand/25">
-        <BrandLogo tone="white" className="size-11" />
-      </div>
+      <img
+        src="/logo.png"
+        alt="Aris"
+        draggable={false}
+        className="mb-6 size-16 object-contain select-none"
+      />
       <p className="text-[11px] font-bold tracking-[0.2em] text-muted uppercase">Erreur 404</p>
       <h1 className="mt-2 text-[26px] font-extrabold tracking-tight text-ink sm:text-[32px]">
         Cette page s’est perdue en chemin

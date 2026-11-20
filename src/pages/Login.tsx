@@ -14,7 +14,6 @@ import {
 import { ApiError } from '../lib/api'
 import { useStore } from '../store/store-context'
 import { Button } from '../components/ui/Button'
-import { BrandLogo } from '../components/ui/BrandLogo'
 import { Input } from '../components/ui/Input'
 import { cn } from '../lib/utils'
 
@@ -110,9 +109,11 @@ export function Login({ initialMode = 'login' }: LoginProps) {
         <div className="pointer-events-none absolute -bottom-40 -left-20 size-[420px] rounded-full bg-fuchsia-400/20 blur-3xl" />
 
         <div className="relative flex justify-center">
-          <BrandLogo
-            variant="full"
-            className="h-40 w-auto drop-shadow-[0_6px_24px_rgba(0,0,0,0.45)]"
+          <img
+            src="/logo.png"
+            alt="Aris"
+            draggable={false}
+            className="h-40 w-auto object-contain drop-shadow-[0_6px_24px_rgba(0,0,0,0.45)] select-none"
           />
         </div>
 
@@ -157,9 +158,12 @@ export function Login({ initialMode = 'login' }: LoginProps) {
       <div className="flex items-center justify-center px-4 py-10 sm:px-8">
         <div className="w-full max-w-[420px]">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-brand to-violet-500 shadow-md shadow-brand/25">
-              <BrandLogo tone="white" className="size-6" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Aris"
+              draggable={false}
+              className="h-10 w-auto shrink-0 object-contain select-none"
+            />
             <div>
               <p className="text-[15px] font-extrabold tracking-tight text-ink">Aris</p>
               <p className="text-[9px] font-semibold tracking-[0.18em] text-muted uppercase">
