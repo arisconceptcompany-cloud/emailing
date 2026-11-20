@@ -7,9 +7,15 @@ import {
 } from 'react'
 import {
   ApiError,
+  UNAUTHORIZED_EVENT,
   api,
+  getToken,
+  setToken,
+  type AuthUser,
+  type LoginInput,
   type NewCampaignInput,
   type NewContactInput,
+  type RegisterInput,
 } from '../lib/api'
 import type {
   AppSettings,
@@ -47,7 +53,7 @@ function LoadingScreen() {
   )
 }
 
-function ErrorScreen({ onRetry }: { onRetry: () => void }) {
+function ErrorScreen({ onRetry, onLogout }: { onRetry: () => void; onLogout: () => void }) {
   return (
     <div className="grid min-h-dvh place-items-center bg-canvas px-4">
       <div className="max-w-md text-center">
@@ -59,13 +65,22 @@ function ErrorScreen({ onRetry }: { onRetry: () => void }) {
           <code className="rounded bg-surface-2 px-1 py-0.5">http://localhost:8000</code>), puis
           réessayez.
         </p>
-        <button
-          type="button"
-          onClick={onRetry}
-          className="mt-4 rounded-xl bg-brand px-4 py-2 text-[12.5px] font-semibold text-white transition hover:bg-brand-strong"
-        >
-          Réessayer
-        </button>
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <button
+            type="button"
+            onClick={onRetry}
+            className="rounded-xl bg-brand px-4 py-2 text-[12.5px] font-semibold text-white transition hover:bg-brand-strong"
+          >
+            Réessayer
+          </button>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="rounded-xl border border-line bg-surface px-4 py-2 text-[12.5px] font-semibold text-ink-soft transition hover:bg-surface-2"
+          >
+            Se déconnecter
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -80,7 +95,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(readTheme)
   const [composer, setComposer] = useState<ComposerState>({ open: false })
   const [toasts, setToasts] = useState<Toast[]>([])
-  const [status, setStatus] = useState<LoadStatus>('loading')
+  const [status, setStatus] = useState<LoadStatus>(() => (getToken() ? 'loading' : 'ready'))
+  const [user, setUser] = useState<AuthUser | null>(null)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -126,6 +142,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
 
   const load = useCallback(async () => {
+    if (!getToken()) {
+      setStatus('ready')
+      return
+    }
     setStatus('loading')
     try {
       const [campaignsData, contactsData, listsData, templatesData, settingsData] =
@@ -142,14 +162,96 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setTemplates(templatesData)
       setSettings(settingsData)
       setStatus('ready')
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        setToken(null)
+        setUser(null)
+        setStatus('ready')
+        return
+      }
       setStatus('error')
     }
   }, [])
 
+  // Au démarrage : on vérifie d'abord la session, puis on charge les données.
+  // Sans token, on affiche directement la page de connexion (pas d'écran de chargement).
   useEffect(() => {
-    void load()
+    let active = true
+    const init = async () => {
+      if (!getToken()) {
+        setUser(null)
+        setStatus('ready')
+        return
+      }
+      try {
+        const me = await api.auth.me()
+        if (!active) return
+        setUser(me)
+        await load()
+      } catch (error) {
+        if (!active) return
+        if (error instanceof ApiError && error.status === 401) {
+          setToken(null)
+          setUser(null)
+          setStatus('ready')
+        } else {
+          setStatus('error')
+        }
+      }
+    }
+    void init()
+    return () => {
+      active = false
+    }
   }, [load])
+
+  // Une requête qui reçoit un 401 (token expiré, session révoquée) déconnecte
+  // l'utilisateur, même si elle vient d'un composant isolé.
+  useEffect(() => {
+    const onUnauthorized = () => {
+      setUser(null)
+      setStatus('ready')
+    }
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized)
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized)
+  }, [])
+
+  const clearSession = useCallback(() => {
+    setToken(null)
+    setUser(null)
+    setCampaigns([])
+    setContacts([])
+    setLists([])
+    setTemplates([])
+    setSettings(null)
+    setComposer({ open: false })
+    setStatus('ready')
+  }, [])
+
+  const signIn = useCallback(
+    async (input: LoginInput) => {
+      const result = await api.auth.login(input)
+      setToken(result.token)
+      setUser(result.user)
+      await load()
+    },
+    [load]
+  )
+
+  const signUp = useCallback(
+    async (input: RegisterInput) => {
+      const result = await api.auth.register(input)
+      setToken(result.token)
+      setUser(result.user)
+      await load()
+    },
+    [load]
+  )
+
+  const logout = useCallback(() => {
+    if (getToken()) void api.auth.logout().catch(() => undefined)
+    clearSession()
+  }, [clearSession])
 
   const setTheme = useCallback((next: Theme) => setThemeState(next), [])
   const toggleTheme = useCallback(
@@ -379,6 +481,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<StoreValue>(
     () => ({
+      user,
+      signIn,
+      signUp,
+      logout,
       campaigns,
       contacts,
       lists,
@@ -409,6 +515,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       dismissToast,
     }),
     [
+      user,
+      signIn,
+      signUp,
+      logout,
       campaigns,
       contacts,
       lists,
@@ -441,7 +551,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
 
   if (status === 'loading') return <LoadingScreen />
-  if (status === 'error') return <ErrorScreen onRetry={() => void load()} />
+  if (status === 'error') {
+    return <ErrorScreen onRetry={() => void load()} onLogout={logout} />
+  }
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }

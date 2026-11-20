@@ -1,5 +1,5 @@
-import { Link, useLocation } from 'react-router-dom'
-import { Menu, Moon, Search, Sun } from 'lucide-react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { LogOut, Menu, Moon, Search, Sun } from 'lucide-react'
 import { useStore } from '../../store/store-context'
 import { Avatar } from '../ui/Avatar'
 
@@ -19,12 +19,18 @@ interface TopbarProps {
 }
 
 export function Topbar({ onOpenMobile, onOpenSearch }: TopbarProps) {
-  const { theme, toggleTheme, settings } = useStore()
-  const accountName = settings
+  const { theme, toggleTheme, settings, user, logout } = useStore()
+  const navigate = useNavigate()
+  const accountName = user?.name || (settings
     ? `${settings.firstName} ${settings.lastName}`.trim() || 'Mon compte'
-    : 'Mon compte'
-  const accountEmail = settings?.email ?? ''
+    : 'Mon compte')
+  const accountEmail = user?.email ?? settings?.email ?? ''
   const location = useLocation()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login', { replace: true })
+  }
 
   const title = pageTitles[location.pathname] ?? 'Aris'
 
@@ -83,6 +89,15 @@ export function Topbar({ onOpenMobile, onOpenSearch }: TopbarProps) {
           className="grid size-9 place-items-center rounded-xl text-muted transition hover:bg-surface-2 hover:text-ink"
         >
           {theme === 'dark' ? <Sun className="size-4.5" /> : <Moon className="size-4.5" />}
+        </button>
+
+        <button
+          onClick={handleLogout}
+          aria-label="Se déconnecter"
+          title="Se déconnecter"
+          className="grid size-9 place-items-center rounded-xl text-muted transition hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400"
+        >
+          <LogOut className="size-4.5" />
         </button>
 
         <div className="mx-1 hidden h-6 w-px bg-line sm:block" />

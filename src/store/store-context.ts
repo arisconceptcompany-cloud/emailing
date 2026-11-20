@@ -1,5 +1,11 @@
 import { createContext, useContext } from 'react'
-import type { NewCampaignInput, NewContactInput } from '../lib/api'
+import type {
+  LoginInput,
+  NewCampaignInput,
+  NewContactInput,
+  RegisterInput,
+} from '../lib/api'
+import type { AuthUser } from '../lib/api'
 import type {
   Campaign,
   Contact,
@@ -19,6 +25,11 @@ export interface ComposerState {
 }
 
 export interface StoreValue {
+  /** Utilisateur connecté ; null = écran de connexion à afficher. */
+  user: AuthUser | null
+  signIn: (input: LoginInput) => Promise<void>
+  signUp: (input: RegisterInput) => Promise<void>
+  logout: () => void
   campaigns: Campaign[]
   contacts: Contact[]
   lists: ContactList[]

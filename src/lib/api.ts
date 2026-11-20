@@ -16,6 +16,54 @@ const API_ORIGIN = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')
 // par exemple : VITE_API_URL=https://api.aris-cc.com
 const BASE = `${API_ORIGIN}/api`
 
+// Le token de session est conservé dans le navigateur pour survivre à un
+// rechargement de la page. Il n'est jamais envoyé qu'à l'API (header Bearer).
+const TOKEN_KEY = 'aris.token'
+
+export function getToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setToken(token: string | null): void {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token)
+    else localStorage.removeItem(TOKEN_KEY)
+  } catch {
+    /* stockage indisponible (navigation privée) : session en mémoire uniquement */
+  }
+}
+
+/** Signal reçu par le store lorsqu'une requête reçoit un 401. */
+export const UNAUTHORIZED_EVENT = 'aris:unauthorized'
+
+export interface AuthUser {
+  id: string
+  name: string
+  email: string
+  role: string
+  createdAt: string
+}
+
+export interface AuthResponse {
+  token: string
+  user: AuthUser
+}
+
+export interface RegisterInput {
+  name: string
+  email: string
+  password: string
+}
+
+export interface LoginInput {
+  email: string
+  password: string
+}
+
 export interface NewCampaignInput {
   name: string
   subject: string
@@ -147,12 +195,14 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getToken()
   let response: Response
   try {
     response = await fetch(`${BASE}${path}`, {
       ...init,
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(init?.headers ?? {}),
       },
     })
@@ -168,6 +218,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* réponse non JSON */
     }
+    // Un 401 sur une route protégée signifie que la session est terminée.
+    // On ne le fait pas pour /auth/ (mauvais mot de passe au login).
+    if (response.status === 401 && token && !path.startsWith('/auth/')) {
+      setToken(null)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
+      }
+    }
     throw new ApiError(response.status, message)
   }
 
@@ -177,6 +235,21 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   health: () => request<{ status: string }>('/health'),
+
+  auth: {
+    register: (input: RegisterInput) =>
+      request<AuthResponse>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    login: (input: LoginInput) =>
+      request<AuthResponse>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    me: () => request<AuthUser>('/auth/me'),
+    logout: () => request<void>('/auth/logout', { method: 'POST' }),
+  },
 
   campaigns: {
     list: () => request<Campaign[]>('/campaigns'),

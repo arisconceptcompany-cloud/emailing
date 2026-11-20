@@ -1,9 +1,10 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
   ChevronsLeft,
   ChevronsRight,
   LayoutDashboard,
+  LogOut,
   LayoutTemplate,
   LifeBuoy,
   Mail,
@@ -58,10 +59,17 @@ export function Sidebar({
   collapsed,
   onToggleCollapse,
 }: SidebarProps) {
-  const { campaigns, settings } = useStore()
-  const accountName = settings
+  const { campaigns, settings, user, logout } = useStore()
+  const navigate = useNavigate()
+  const accountName = user?.name || (settings
     ? `${settings.firstName} ${settings.lastName}`.trim() || 'Mon compte'
-    : 'Mon compte'
+    : 'Mon compte')
+  const accountEmail = user?.email ?? settings?.email ?? ''
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login', { replace: true })
+  }
   const activeCount = campaigns.filter(
     (campaign) => campaign.status === 'sending' || campaign.status === 'scheduled'
   ).length
@@ -193,12 +201,27 @@ export function Sidebar({
             <Avatar name={accountName} size="sm" />
             <div className={cn('min-w-0 flex-1', collapsed && 'lg:hidden')}>
               <p className="truncate text-[12.5px] font-semibold text-ink">{accountName}</p>
-              <p className="truncate text-[10.5px] text-muted">Administrateur</p>
+              <p className="truncate text-[10.5px] text-muted">
+                {accountEmail || 'Administrateur'}
+              </p>
             </div>
             <Settings
               className={cn('size-4 shrink-0 text-muted', collapsed && 'lg:hidden')}
             />
           </NavLink>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Se déconnecter"
+            className={cn(
+              'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-medium text-muted transition hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400',
+              collapsed && 'lg:justify-center lg:px-0'
+            )}
+          >
+            <LogOut className="size-4 shrink-0" />
+            <span className={cn(collapsed && 'lg:hidden')}>Se déconnecter</span>
+          </button>
         </div>
       </aside>
     </>

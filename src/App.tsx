@@ -1,5 +1,6 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { StoreProvider } from './store/StoreContext'
+import { useStore } from './store/store-context'
 import { AppLayout } from './components/layout/AppLayout'
 import { Toaster } from './components/ui/Toaster'
 import { Dashboard } from './pages/Dashboard'
@@ -9,14 +10,26 @@ import { Templates } from './pages/Templates'
 import { Analytics } from './pages/Analytics'
 import { Settings } from './pages/Settings'
 import { Help } from './pages/Help'
+import { Login } from './pages/Login'
 import { NotFound } from './pages/NotFound'
+
+function RequireAuth() {
+  const { user } = useStore()
+  const location = useLocation()
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  }
+  return <AppLayout />
+}
 
 export default function App() {
   return (
-    <StoreProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <StoreProvider>
         <Routes>
-          <Route element={<AppLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/inscription" element={<Login initialMode="register" />} />
+          <Route element={<RequireAuth />}>
             <Route index element={<Dashboard />} />
             <Route path="campagnes" element={<Campaigns />} />
             <Route path="contacts" element={<Contacts />} />
@@ -27,8 +40,8 @@ export default function App() {
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
-      </BrowserRouter>
-      <Toaster />
-    </StoreProvider>
+        <Toaster />
+      </StoreProvider>
+    </BrowserRouter>
   )
 }
