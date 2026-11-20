@@ -157,8 +157,20 @@ export function Login({ initialMode = 'login' }: LoginProps) {
       </div>
 
       {/* Formulaire */}
-      <div className="flex items-center justify-center px-4 py-10 sm:px-8">
-        <div className="w-full max-w-[420px]">
+      <div className="relative flex items-center justify-center overflow-hidden px-4 py-10 sm:px-8">
+        {/* Filigrane : logo complet, discret et non interactif. */}
+        <div className="pointer-events-none absolute inset-0 grid place-items-center">
+          <BrandLogo
+            variant="full"
+            className="h-[560px] max-h-[72vh] w-auto opacity-[0.055] dark:hidden"
+          />
+          <BrandLogo
+            variant="full"
+            tone="white"
+            className="hidden h-[560px] max-h-[72vh] w-auto opacity-[0.07] dark:block"
+          />
+        </div>
+        <div className="relative z-10 w-full max-w-[420px]">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-brand to-violet-500 shadow-md shadow-brand/25">
               <BrandLogo tone="white" className="size-6" />
