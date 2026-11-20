@@ -7,7 +7,6 @@ import {
   LogOut,
   LayoutTemplate,
   LifeBuoy,
-  Mail,
   Send,
   Settings,
   Users,
@@ -16,6 +15,7 @@ import {
 import { useStore } from '../../store/store-context'
 import { cn } from '../../lib/utils'
 import { Avatar } from '../ui/Avatar'
+import { BrandLogo } from '../ui/BrandLogo'
 
 interface SidebarProps {
   mobileOpen: boolean
@@ -40,9 +40,7 @@ const secondaryNav = [
 function Logo({ collapsed }: { collapsed: boolean }) {
   return (
     <div className="flex items-center gap-2.5 overflow-hidden">
-      <div className="grid size-9.5 shrink-0 place-items-center rounded-xl bg-linear-to-br from-brand to-violet-500 text-white shadow-lg shadow-brand/30">
-        <Mail className="size-[18px]" />
-      </div>
+      <BrandLogo className="size-9.5 shrink-0" />
       <div className={cn('min-w-0 transition-opacity', collapsed && 'lg:hidden')}>
         <p className="text-[15px] leading-tight font-extrabold tracking-tight text-ink">Aris</p>
         <p className="text-[9.5px] font-semibold tracking-[0.18em] text-muted uppercase">
