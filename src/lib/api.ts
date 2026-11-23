@@ -352,6 +352,8 @@ export const api = {
         body: JSON.stringify(input),
       }),
     getSmtp: () => request<SmtpConfig>('/settings/smtp'),
+    revealSmtpPassword: () =>
+      request<{ smtpPassword: string }>('/settings/smtp/password'),
     updateSmtp: (input: SmtpConfigUpdate) =>
       request<SmtpConfig>('/settings/smtp', {
         method: 'PUT',

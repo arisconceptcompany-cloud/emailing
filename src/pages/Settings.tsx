@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import {
   Check,
+  Eye,
+  EyeOff,
   Globe,
   Inbox,
   KeyRound,
@@ -120,6 +122,8 @@ export function Settings() {
   const [smtpTestEmail, setSmtpTestEmail] = useState('')
   const [savingSmtp, setSavingSmtp] = useState(false)
   const [testingSmtp, setTestingSmtp] = useState(false)
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false)
+  const [revealingSmtpPassword, setRevealingSmtpPassword] = useState(false)
 
   useEffect(() => {
     if (!settings) return
@@ -209,6 +213,7 @@ export function Settings() {
     const data = config ?? (await api.settings.getSmtp())
     const configured = Boolean(data.smtpHost)
     setSmtp(data)
+    setShowSmtpPassword(false)
     setSmtpForm({
       host: configured ? data.smtpHost : data.activeHost,
       port: String(configured ? data.smtpPort : data.activePort || 587),
@@ -291,6 +296,31 @@ export function Settings() {
       })
     } finally {
       setTestingSmtp(false)
+    }
+  }
+
+  const toggleSmtpPassword = async () => {
+    if (showSmtpPassword) {
+      setShowSmtpPassword(false)
+      return
+    }
+    setRevealingSmtpPassword(true)
+    try {
+      const { smtpPassword } = await api.settings.revealSmtpPassword()
+      setSmtpForm((current) => ({ ...current, password: smtpPassword }))
+      setShowSmtpPassword(true)
+      if (!smtpPassword) {
+        toast('Aucun mot de passe enregistré', {
+          description: 'Saisissez un mot de passe d’application avant d’enregistrer.',
+        })
+      }
+    } catch {
+      toast('Affichage impossible', {
+        description: 'Impossible de récupérer le mot de passe SMTP enregistré.',
+        variant: 'error',
+      })
+    } finally {
+      setRevealingSmtpPassword(false)
     }
   }
 
@@ -498,7 +528,7 @@ export function Settings() {
               />
               <Input
                 label="Mot de passe d’application"
-                type="password"
+                type={showSmtpPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 placeholder={
                   smtp?.smtpPasswordSet
@@ -509,10 +539,34 @@ export function Settings() {
                 onChange={(event) =>
                   setSmtpForm((current) => ({ ...current, password: event.target.value }))
                 }
+                action={
+                  <button
+                    type="button"
+                    onClick={() => void toggleSmtpPassword()}
+                    disabled={revealingSmtpPassword}
+                    aria-label={
+                      showSmtpPassword
+                        ? 'Masquer le mot de passe SMTP'
+                        : 'Afficher le mot de passe SMTP'
+                    }
+                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-brand transition hover:bg-brand-soft disabled:opacity-50"
+                  >
+                    {showSmtpPassword ? (
+                      <EyeOff className="size-3.5" />
+                    ) : (
+                      <Eye className="size-3.5" />
+                    )}
+                    {revealingSmtpPassword
+                      ? 'Chargement…'
+                      : showSmtpPassword
+                        ? 'Masquer'
+                        : 'Afficher'}
+                  </button>
+                }
                 hint={
                   smtpForm.host.includes('gmail') || smtpForm.user.includes('gmail')
                     ? 'Gmail : utilisez un mot de passe d’application (16 caractères), pas le mot de passe du compte.'
-                    : 'Le mot de passe est chiffré et n’est jamais réaffiché.'
+                    : 'Le mot de passe est chiffré sur le serveur. Cliquez sur « Afficher » pour le consulter.'
                 }
               />
               <Input
