@@ -331,7 +331,7 @@ export function Settings() {
       await reloadSmtp(updated)
       void checkMail()
       void checkDomain()
-      toast('Configuration SMTP effacée', { description: 'La configuration du serveur est de nouveau utilisée.' })
+      toast('Configuration SMTP effacée', { description: 'Les valeurs par défaut du serveur sont de nouveau utilisées.' })
     } catch {
       toast('Effacement impossible', { variant: 'error' })
     } finally {
@@ -472,8 +472,8 @@ export function Settings() {
           <Card className="p-5">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <SectionHeading
-                title="Serveur SMTP"
-                description="Configurez la boîte qui envoie réellement vos emails. Aucun redémarrage du serveur n’est nécessaire."
+                title="Votre serveur SMTP"
+                description="Configurez la boîte qui envoie réellement les emails de votre compte. Cette configuration est propre à votre compte."
               />
               <span
                 className={cn(
@@ -484,7 +484,7 @@ export function Settings() {
                 )}
               >
                 <Server className="size-2.5" />
-                {smtp?.smtpHost ? 'Enregistré ici' : 'Configuration serveur'}
+                {smtp?.smtpHost ? 'Enregistré pour ce compte' : 'Valeurs par défaut'}
               </span>
             </div>
 
@@ -657,7 +657,7 @@ export function Settings() {
                   disabled={savingSmtp}
                   onClick={() => void resetSmtp()}
                 >
-                  Revenir au serveur
+                  Revenir aux valeurs par défaut
                 </Button>
               )}
             </div>
